@@ -1,6 +1,10 @@
-# hydro-nu
+# <i>H</i>ydro-nu
 
-> 为 Nushell 编写的轻量提示符，受 [Hydro](https://github.com/jorgebucaran/hydro) 启发。Git 状态异步刷新，无需 Nerd Font。
+<p align="center">
+    <a href="README.md">中文</a> / <a href="README_en.md">English</a>
+</p>
+
+为 Nushell 编写的轻量提示符，受 [Hydro](https://github.com/jorgebucaran/hydro) 启发。
 
 ```text
 ~/p/hydro-nu main• ↑1 ↓2 1.3s ❱
@@ -14,7 +18,7 @@
 nu --no-config-file -c (http get --raw https://raw.githubusercontent.com/Yousa-Mirage/hydro-nu/main/install.nu) --config-file $nu.config-path
 ```
 
-安装到 `~/.config/nushell/hydro/`，自动配置启动加载。重新打开终端即可使用。
+默认安装到 `~/.config/nushell/hydro/`，自动配置启动加载。重新打开终端即可使用。
 重复运行可更新，已有的 `hydro.toml` 会保留。
 
 如果正在使用其他提示符（如 Starship），请先停用其初始化配置。
