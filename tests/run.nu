@@ -64,7 +64,10 @@ do {
     check ($styled | str contains (ansi d)) 'Dim separator missing'
     let disabled = (hydro render $styled_context (hydro resolve {path: {bold_leaf: false dim_separators: false}}))
     check (not ($disabled | str contains (ansi bo)) and not ($disabled | str contains (ansi d))) 'Path style toggles ignored'
+    let resolved = (hydro resolve {})
+    check ((with-env {NO_COLOR: '1'} { hydro render $styled_context $resolved }) == (hydro render $styled_context $config)) 'Cached colors ignored a later NO_COLOR change'
 }
+$passed += 1
 let prefix_config = (hydro resolve {color: false symbols: {start: '╭─ '}})
 check ((hydro render $context $prefix_config) | str starts-with '╭─ ~/') 'Start symbol missing'
 check ((hydro resolve {colors: {path: ''}}).colors.path == '') 'Neutral color rejected'
@@ -121,6 +124,12 @@ mkdir $repo
 let outcome = (try {
     with-env {GIT_CEILING_DIRECTORIES: $fixture_parent} {
         check ((hydro git query $root $config) == null) 'Non-repository must be silent'
+    }
+    check ((hydro git query ($root | path join missing) $config) == null) 'Failed parallel queries must be silent'
+    with-env {PATH: []} {
+        check ((hydro git query $repo $config) == null) 'Missing Git broke parallel query'
+        check ((hydro git query $repo (hydro resolve {path: {keep_repo: false}})) == null) 'Missing Git broke status-only query'
+        check ((hydro git query $repo (hydro resolve {git: {ignored_paths: [$repo]}})) == null) 'Missing Git broke sequential query'
     }
     git-ok $repo init --quiet --initial-branch=main | ignore
     let unborn = (hydro git query $repo $config)
@@ -190,7 +199,7 @@ if (($root | path expand | path dirname) != ($fixture_parent | path expand)) {
 }
 rm --recursive --force $root
 if not $outcome.ok { error make {msg: $outcome.error.rendered} }
-$passed += (11 + 10 + (if $nu.os-info.name == windows { 1 } else { 0 }))
+$passed += (11 + 14 + (if $nu.os-info.name == windows { 1 } else { 0 }))
 
 # Lifecycle: preserve unrelated hooks and prompt values, including repeated enable.
 $env.PROMPT_COMMAND = {|| 'existing prompt' }

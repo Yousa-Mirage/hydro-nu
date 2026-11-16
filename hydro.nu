@@ -83,14 +83,17 @@ export def "hydro resolve" [options: record = {}] {
     }
     $config | upsert colors $colors | upsert git.ignored_paths $ignored
         | upsert _home_keys (path-key $nu.home-dir)
+        | upsert _ansi ($colors | transpose key value | reduce --fold {} {|entry, acc|
+            $acc | insert $entry.key (if $entry.value == '' { '' } else { ansi {fg: $entry.value} })
+        })
+        | upsert _style {bold: (ansi bo) dim: (ansi d) reset: (ansi reset)}
 }
 
 def paint [text: string, role: string, config: record, --bold, --dim] {
     if $text == '' or not $config.color or ($env.NO_COLOR? != null) { return $text }
-    let color = ($config.colors | get $role)
-    let start = if $color == '' { '' } else { ansi {fg: $color} }
-    let style = if $bold { ansi bo } else if $dim { ansi d } else { '' }
-    $"($start)($style)($text)(ansi reset)"
+    let start = ($config._ansi | get $role)
+    let style = if $bold { $config._style.bold } else if $dim { $config._style.dim } else { '' }
+    $"($start)($style)($text)($config._style.reset)"
 }
 
 # Compare complete components; never treat "repo-old" as a child of "repo".
@@ -101,7 +104,7 @@ def path-key [path: string] {
 }
 
 def fold-path [parts: list<string>] {
-    if $nu.os-info.name == windows { $parts | each { str lowercase } } else { $parts }
+    if $nu.os-info.name == windows { $parts | str lowercase } else { $parts }
 }
 
 # One snapshot per prompt cycle, shared by the initial and completed Git frames.
@@ -182,24 +185,37 @@ export def "hydro git parse" [text: string] {
     {branch: $branch detached: $detached dirty: $dirty ahead: $ahead behind: $behind}
 }
 
+# Keep failures as records: parallel collection must not drop failed commands.
+def git-query [cwd: string, args: list<string>] {
+    try { ^git --no-optional-locks -C $cwd ...$args | complete } catch {
+        {exit_code: -1 stdout: '' stderr: ''}
+    }
+}
+
 export def "hydro git query" [cwd: string, config: record] {
     if not $config.git.enabled { return null }
     mut root = ''
-    # Discover the root before scanning status, so ignored repositories skip the
-    # expensive traversal. Skip discovery when both dependent features are off.
-    if $config.path.keep_repo or ($config.git.ignored_paths | is-not-empty) {
-        let discovery = (try {
-            ^git --no-optional-locks -C $cwd rev-parse --show-toplevel | complete
-        } catch { return null })
+    let untracked = if $config.git.untracked { '--untracked-files=normal' } else { '--untracked-files=no' }
+    let status_args = [status --porcelain=v2 --branch --no-renames $untracked]
+    let discovery_args = [rev-parse --show-toplevel]
+    let has_ignored = ($config.git.ignored_paths | is-not-empty)
+    # With exclusions, discover first so ignored repositories never scan status.
+    # Otherwise independent queries can overlap their process startup and I/O.
+    let result = if $has_ignored {
+        let discovery = (git-query $cwd $discovery_args)
         if $discovery.exit_code != 0 { return null }
         $root = ($discovery.stdout | str replace --regex '[\r\n]+$' '')
         let key = (path-key $root)
         if ($config.git.ignored_paths | any {|entry| (path-key $entry) == $key }) { return null }
+        git-query $cwd $status_args
+    } else if $config.path.keep_repo {
+        let results = ([$discovery_args $status_args] | par-each --threads 2 --keep-order {|args| git-query $cwd $args })
+        if $results.0.exit_code != 0 { return null }
+        $root = ($results.0.stdout | str replace --regex '[\r\n]+$' '')
+        $results.1
+    } else {
+        git-query $cwd $status_args
     }
-    let untracked = if $config.git.untracked { '--untracked-files=normal' } else { '--untracked-files=no' }
-    let result = (try {
-        ^git --no-optional-locks -C $cwd status --porcelain=v2 --branch --no-renames $untracked | complete
-    } catch { return null })
     if $result.exit_code != 0 { return null }
     mut state = (hydro git parse $result.stdout | insert root $root)
     if $state.detached and $config.git.detached_tag {
