@@ -1,0 +1,52 @@
+# hydro-nu: edit this file, then run `hydro reload` in Nushell.
+# Themes: hydro, rose-pine, catppuccin-mocha, mono.
+theme = "rose-pine"
+color = true
+two_line = false
+duration_min_ms = 1000
+
+[path]
+abbreviate = true
+keep_last = 1
+# Set to 0 to hide intermediate directories; keep the Git root and last dirs.
+parent_length = 1
+home = "~"
+keep_repo = true
+bold_leaf = true
+dim_separators = true
+
+[git]
+enabled = true
+untracked = true
+detached_tag = true
+# Exact repository roots; independent nested repositories remain visible.
+# Example: ignored_paths = ['C:\large-repo', '~/projects/archive']
+ignored_paths = []
+
+[symbols]
+# Optional prefix, e.g. "╭─ "; include any desired trailing space.
+start = ""
+prompt = "❱"
+dirty = "•"
+ahead = "↑"
+behind = "↓"
+pending = ""
+vi_insert = ""
+vi_normal = "N"
+continuation = "…"
+
+# Override any individual theme color with a named ANSI color or #RRGGBB.
+# Named colors: cyan, magenta, green, yellow, red, white, dark_gray, ...
+# Empty color values (e.g. path = "") use the terminal foreground.
+# An empty [colors] section keeps the selected theme's palette.
+[colors]
+# path = "#9ccfd8"
+# git = "#c4a7e7"
+# clean = "#31748f"
+# dirty = "#f6c177"
+# pending = "#6e6a86"
+# duration = "#f6c177"
+# error = "#eb6f92"
+# prompt = "#9ccfd8"
+# vi = "#ebbcba"
+# start = "#9ccfd8"
