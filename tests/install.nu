@@ -13,7 +13,7 @@ def backups [config: path] {
 def invoke [destination: path, config: path, --source: path = $project, --inline] {
     let args = [--source-dir $source --install-dir $destination --config-file $config]
     if $inline {
-        ^$nu.current-exe --no-config-file -c (open --raw $installer) ...$args | complete
+        open --raw $installer | ^$nu.current-exe --no-config-file -c $in ...$args | complete
     } else {
         ^$nu.current-exe --no-config-file $installer ...$args | complete
     }

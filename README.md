@@ -15,7 +15,7 @@
 需要 Nushell **0.117.0+**；显示仓库状态需要 Git。在 Nushell 中执行：
 
 ```nu
-nu --no-config-file -c (http get --raw https://raw.githubusercontent.com/Yousa-Mirage/hydro-nu/main/install.nu) --config-file $nu.config-path
+http get --raw https://raw.githubusercontent.com/Yousa-Mirage/hydro-nu/main/install.nu | nu --no-config-file -c $in --config-file $nu.config-path
 ```
 
 默认安装到 `~/.config/nushell/hydro/`，自动配置启动加载。重新打开终端即可使用。

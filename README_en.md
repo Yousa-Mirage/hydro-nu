@@ -15,7 +15,7 @@ A lightweight prompt for Nushell, inspired by [Hydro](https://github.com/jorgebu
 Requires Nushell **0.117.0+**. Git is optional; it is only needed for repository status. Run this in Nushell:
 
 ```nu
-nu --no-config-file -c (http get --raw https://raw.githubusercontent.com/Yousa-Mirage/hydro-nu/main/install.nu) --config-file $nu.config-path
+http get --raw https://raw.githubusercontent.com/Yousa-Mirage/hydro-nu/main/install.nu | nu --no-config-file -c $in --config-file $nu.config-path
 ```
 
 The installer places hydro-nu in `~/.config/nushell/hydro/` and adds the startup configuration automatically. Restart Nushell to use it. Running the installer again updates the module while preserving your existing `hydro.toml`.
